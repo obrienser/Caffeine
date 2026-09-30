@@ -1,0 +1,141 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+# Custom folder icon: the file name is "Icon" followed by a carriage return
+Icon
+
+# Xcode per-user state (shared schemes in xcshareddata/ stay tracked)
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+*.moved-aside
+*.hmap
+timeline.xctimeline
+playground.xcworkspace
+
+# Build output, test results and profiling
+build/
+DerivedData/
+*.xcarchive
+*.xcresult
+*.dSYM
+*.dSYM.zip
+*.profraw
+*.profdata
+*.trace
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# Release artifacts
+*.app
+*.dmg
+*.pkg
+*.zip
+
+# Signing and notarization credentials: never commit these
+*.p8
+*.p12
+*.pfx
+*.pem
+*.key
+*.cer
+*.certSigningRequest
+*.mobileprovision
+*.provisionprofile
+*.keychain
+*.keychain-db
+.env
+.env.*
+
+# Diagnostics that can contain personal details: logs saved with Export Log…, crash reports
+Caffeine Log *.txt
+*.log
+*.crash
+*.ips
+
+# Editors
+.idea/
+.vscode/
+.fleet/
+.nova/
+.zed/
+.history/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+*.orig
+*.rej
+
+# AI coding assistants: local settings, instructions, memories, chat histories
+# and worktrees. Remove a line here if you decide to publish that file.
+# Claude Code
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+.mcp.json
+# OpenAI Codex and other tools that read AGENTS.md
+.codex/
+AGENTS.md
+AGENT.md
+# Gemini CLI
+.gemini/
+GEMINI.md
+# Cursor
+.cursor/
+.cursorrules
+.cursorignore
+.cursorindexingignore
+# GitHub Copilot
+.github/copilot-instructions.md
+.github/instructions/
+.github/prompts/
+# Windsurf and Codeium
+.windsurf/
+.windsurfrules
+.codeium/
+# Cline, Roo Code and Kilo Code
+.clinerules
+.cline/
+.roo/
+.roomodes
+.kilocode/
+# Continue
+.continue/
+# Aider
+.aider*
+# Amazon Q, Kiro, JetBrains AI Assistant and Junie, Augment, Trae
+.amazonq/
+.kiro/
+.aiassistant/
+.junie/
+.augment/
+.augment-guidelines
+.trae/
+# opencode
+.opencode/
+opencode.json
+# Zed rules, Warp
+.rules
+WARP.md
+# Chat histories and code bundles that tools save into the project
+.specstory/
+repomix-output.*
