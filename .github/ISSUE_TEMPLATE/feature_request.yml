@@ -1,0 +1,16 @@
+name: Feature request
+description: Suggest an idea for Caffeine.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: What would you like to do?
+      description: The situation and what's missing. Describe the need rather than a solution, if you can.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+      description: How Caffeine could help. Mention apps that already do it well, if any.

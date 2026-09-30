@@ -1,0 +1,54 @@
+name: Bug report
+description: Something in Caffeine doesn't work as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem. Please don't report security problems here; follow the [security policy](https://github.com/obrienser/Caffeine/security/policy) instead.
+  - type: input
+    id: caffeine-version
+    attributes:
+      label: Caffeine version
+      description: The App line of the exported log, or Get Info on Caffeine.app in Finder.
+      placeholder: 1.0.0 (1)
+    validations:
+      required: true
+  - type: input
+    id: macos-version
+    attributes:
+      label: macOS version
+      description: Apple menu → About This Mac.
+      placeholder: macOS 27.0
+    validations:
+      required: true
+  - type: input
+    id: mac-model
+    attributes:
+      label: Mac model
+      description: Apple menu → About This Mac.
+      placeholder: MacBook Pro (14-inch, 2023)
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+      placeholder: |
+        1. Turned on Keep Awake with Closed Lid Mode.
+        2. Closed the lid.
+        3. …
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Log
+      description: |
+        Choose **Export Log…** at the bottom of Caffeine's card and drag the saved file into this field. The log lists Caffeine's actions and errors, the Mac model and the names of recent crash reports. It contains no passwords, documents or screen contents; look through it before you attach it.
+  - type: textarea
+    id: more
+    attributes:
+      label: Anything else
+      description: External displays, the power adapter, other apps that manage sleep, screenshots.
