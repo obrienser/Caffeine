@@ -60,13 +60,13 @@ You need Xcode 27 or later and a signing certificate issued by Apple (see below)
 
 The app and its service trust each other only through code signatures, and the expected identity is compiled into both. A build signed by another team can't set up or reach the service until you change the Team ID in both places listed below. Change the other values too, so that your build can't collide with the official app, and keep them consistent:
 
-| Value | Now | Where to change it |
-| --- | --- | --- |
-| Team ID | `WQ33LA2JZ5` | Team in Signing & Capabilities of both targets, for Debug and Release (`DEVELOPMENT_TEAM`)<br>`teamIdentifier` in `Core/Sources/CaffeineServiceProtocol/ServiceProtocol.swift` |
-| App identifier | `com.serhiital.Caffeine` | Bundle Identifier of the Caffeine target, for Debug and Release<br>`appIdentifier` in `ServiceProtocol.swift` |
-| Service identifier | `com.serhiital.Caffeine.Helper` | Bundle Identifier of the CaffeineHelper target, for Debug and Release<br>`helperIdentifier` and `machService` in `ServiceProtocol.swift`<br>`Label` and the key under `MachServices` in the launchd plist |
-| launchd plist name | `com.serhiital.Caffeine.Helper.plist` | The file in `Service/`; rename it in the Xcode project navigator so the Embed LaunchDaemon build phase keeps it<br>`daemonPlist` in `ServiceProtocol.swift` |
-| Recovery folder | `/Library/Application Support/com.serhiital.Caffeine` | `productionDirectory` in `Core/Sources/CaffeineSystemPower/RecoveryJournal.swift` |
+| Value | Where to change it |
+| --- | --- |
+| Team ID | Team in Signing & Capabilities of both targets, for Debug and Release (`DEVELOPMENT_TEAM`)<br>`teamIdentifier` in `Core/Sources/CaffeineServiceProtocol/ServiceProtocol.swift` |
+| App identifier | Bundle Identifier of the Caffeine target, for Debug and Release<br>`appIdentifier` in `ServiceProtocol.swift` |
+| Service identifier | Bundle Identifier of the CaffeineHelper target, for Debug and Release<br>`helperIdentifier` and `machService` in `ServiceProtocol.swift`<br>`Label` and the key under `MachServices` in the launchd plist |
+| launchd plist name | The file in `Service/`; rename it in the Xcode project navigator so the Embed LaunchDaemon build phase keeps it<br>`daemonPlist` in `ServiceProtocol.swift` |
+| Recovery folder | `productionDirectory` in `Core/Sources/CaffeineSystemPower/RecoveryJournal.swift` |
 
 Keep these rules:
 
