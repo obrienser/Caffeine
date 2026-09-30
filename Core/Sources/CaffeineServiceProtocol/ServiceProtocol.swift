@@ -1,14 +1,14 @@
 import Foundation
 
 public enum CaffeineServiceIdentity {
-    // v8 adds the check for a fan recovery record of an older helper, after v7
-    // removed fan control. A running v7 helper lacks it, so it must be replaced.
+    // The version of the messages below. Raise it with every change to them, so
+    // that the app replaces an older helper instead of misreading its replies.
     public static let protocolVersion = 8
     // Monotonic implementation build, independent of the wire version. Bump for
     // every shipped helper change, together with both targets' CFBundleVersion.
     // Compiled into each executable: replacing the bundle cannot change the
     // identity reported by an already-running helper.
-    public static let helperBuild = 3
+    public static let helperBuild = 4
     public static let appIdentifier = "com.serhiital.Caffeine"
     public static let helperIdentifier = "com.serhiital.Caffeine.Helper"
     public static let machService = "com.serhiital.Caffeine.Helper"

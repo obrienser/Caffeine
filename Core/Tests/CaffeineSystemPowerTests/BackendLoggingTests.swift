@@ -8,17 +8,9 @@ import CaffeineServiceProtocol
 private final class LoggedJournal: RecoveryJournal, @unchecked Sendable {
     private let lock = NSLock()
     private var stored: RecoveryRecord?
-    private var legacy = false
-    var hasLegacyReceipt: Bool {
-        get { lock.withLock { legacy } }
-        set { lock.withLock { legacy = newValue } }
-    }
     func load() throws -> RecoveryRecord? { lock.withLock { stored } }
     func save(_ record: RecoveryRecord) throws { lock.withLock { stored = record } }
     func remove() throws { lock.withLock { stored = nil } }
-    func verifyLegacyCleanup() throws {
-        if hasLegacyReceipt { throw ServiceFailure(.cleanupRequired, "Previous recovery is unfinished.") }
-    }
 }
 
 private final class LoggedAssertions: SleepAssertions, @unchecked Sendable {
@@ -97,10 +89,5 @@ private actor LoggedRunner: PMSetRunning {
             try await self.backend(silent, LoggedJournal(), unreadable).enable(closedLidMode: true)
         }
         #expect(messages(unreadable, .error).contains("The sleep setting could not be read reliably"))
-
-        let legacy = MemoryLogSink(), blocked = LoggedJournal()
-        blocked.hasLegacyReceipt = true
-        await #expect(throws: ServiceFailure.self) { try await self.backend(LoggedRunner(), blocked, legacy).recover() }
-        #expect(messages(legacy, .error) == ["A recovery record of the previous version is present; sessions stay blocked"])
     }
 }

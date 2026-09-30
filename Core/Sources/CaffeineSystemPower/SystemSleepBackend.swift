@@ -41,14 +41,11 @@ public actor SystemSleepBackend: RuntimeSleepBackend {
     public func recover() async throws {
         await enter(); defer { leave() }
         try await restore()
-        // Always release the owned sleep override before reporting an older version's fan record.
-        try verifyLegacyCleanup()
     }
 
     public func enable(closedLidMode: Bool = true) async throws {
         await enter(); defer { leave() }
         do {
-            try verifyLegacyCleanup()
             if activeClosedLidMode == closedLidMode { return }
             // Remove an owned override before ordinary mode, retaining the idle
             // assertions during a live transition. Failed restoration stays fatal.
@@ -96,15 +93,6 @@ public actor SystemSleepBackend: RuntimeSleepBackend {
     public func disable() async throws {
         await enter(); defer { leave() }
         try await restore()
-        try verifyLegacyCleanup()
-    }
-
-    private func verifyLegacyCleanup() throws {
-        do { try journal.verifyLegacyCleanup() }
-        catch {
-            log.error(.recovery, "A recovery record of the previous version is present; sessions stay blocked")
-            throw error
-        }
     }
 
     private func run(_ command: PMSetCommand) async throws -> PMSetResult {

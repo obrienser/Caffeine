@@ -57,7 +57,6 @@ private final class MemoryJournal: RecoveryJournal, @unchecked Sendable {
         }
     }
     func remove() throws { lock.withLock { stored = nil } }
-    func verifyLegacyCleanup() throws {}
 }
 
 private final class FakeAssertions: SleepAssertions, @unchecked Sendable {
@@ -239,89 +238,6 @@ private actor FakeRunner: PMSetRunning {
         let url = URL(fileURLWithPath: "/private/tmp", isDirectory: true).appendingPathComponent("caffeine-journal-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
         return url
-    }
-
-    private func legacyReceipt(in directory: URL) throws -> URL {
-        let file = directory.appendingPathComponent("cooling-recovery.json")
-        try Data("""
-        {"schema":1,"boot":"\(UUID().uuidString)","fans":[{"id":0,"modeKey":"F0Md","usesLegacyMask":false}],"unlock":true}
-        """.utf8).write(to: file)
-        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: file.path)
-        return file
-    }
-
-    @Test func legacyReceiptBlocksFreshHelperAndNeverResumesASession() async throws {
-        let url = try directory(); defer { try? FileManager.default.removeItem(at: url) }
-        let journal = FileRecoveryJournal(directory: url, owner: geteuid())
-        let file = try legacyReceipt(in: url), original = try Data(contentsOf: file)
-        let runner = FakeRunner(journal: journal), assertions = FakeAssertions()
-        let backend = SystemSleepBackend(runner: runner, journal: journal, assertions: assertions)
-        let authority = HelperSessionAuthority(backend: backend)
-        await authority.prepare()
-        let state = await authority.snapshot()
-        #expect(state.phase == .cleanupRequired && !state.readyForSession)
-        #expect(state.message?.contains("previous version") == true)
-        let connection = UUID(), generation = UUID()
-        let start = await authority.handle(.init(action: .start, generation: generation, revision: 1,
-            onlyWhenCharging: false, closedLidMode: true, durationSeconds: 0), connectionID: connection)
-        #expect(!start.snapshot.requested && start.failure?.code == .cleanupRequired)
-        #expect(await runner.commands.isEmpty)
-        #expect(!assertions.enabled)
-        #expect(try Data(contentsOf: file) == original)
-
-        // Simulate the previous helper completing its own recovery; this version never deletes the file.
-        try FileManager.default.removeItem(at: file)
-        let retry = await authority.handle(.init(action: .stop, revision: 2), connectionID: connection)
-        #expect(retry.snapshot.phase == .off && retry.snapshot.readyForSession && !retry.snapshot.requested)
-        #expect(await runner.commands.isEmpty)
-    }
-
-    @Test func legacyReceiptNeverPreventsOwnedSleepCleanup() async throws {
-        let url = try directory(); defer { try? FileManager.default.removeItem(at: url) }
-        let journal = FileRecoveryJournal(directory: url, owner: geteuid())
-        try journal.save(.init(operation: UUID(), boot: UUID().uuidString, baseline: .explicitZero, phase: .active))
-        let file = try legacyReceipt(in: url), original = try Data(contentsOf: file)
-        let runner = FakeRunner(value: "1", journal: journal), assertions = FakeAssertions()
-        let backend = SystemSleepBackend(runner: runner, journal: journal, assertions: assertions)
-        await #expect(throws: ServiceFailure.self) { try await backend.recover() }
-        #expect(try journal.load() == nil)
-        #expect(await runner.value == "0")
-        #expect(await runner.commands == [.read, .disable, .read])
-        #expect(!assertions.enabled)
-        #expect(try Data(contentsOf: file) == original)
-    }
-
-    @Test func legacyReceiptIsRecheckedBeforeBothActivationModes() async throws {
-        for closedLidMode in [false, true] {
-            let url = try directory(); defer { try? FileManager.default.removeItem(at: url) }
-            let journal = FileRecoveryJournal(directory: url, owner: geteuid())
-            let runner = FakeRunner(journal: journal), assertions = FakeAssertions()
-            let backend = SystemSleepBackend(runner: runner, journal: journal, assertions: assertions)
-            try await backend.recover()
-            let file = try legacyReceipt(in: url)
-            await #expect(throws: ServiceFailure.self) { try await backend.enable(closedLidMode: closedLidMode) }
-            await #expect(throws: ServiceFailure.self) { try await backend.disable() }
-            #expect(await runner.commands.isEmpty)
-            #expect(!assertions.enabled && FileManager.default.fileExists(atPath: file.path))
-        }
-    }
-
-    @Test func malformedAndSubstitutedLegacyReceiptsRemainUnresolved() async throws {
-        for kind in ["malformed", "empty", "directory", "symlink"] {
-            let url = try directory(); defer { try? FileManager.default.removeItem(at: url) }
-            let journal = FileRecoveryJournal(directory: url, owner: geteuid())
-            let file = url.appendingPathComponent("cooling-recovery.json")
-            switch kind {
-            case "directory": try FileManager.default.createDirectory(at: file, withIntermediateDirectories: false)
-            case "symlink": try FileManager.default.createSymbolicLink(at: file, withDestinationURL: url.appendingPathComponent("missing"))
-            default: try Data((kind == "empty" ? "" : "not-json").utf8).write(to: file)
-            }
-            let runner = FakeRunner(journal: journal), assertions = FakeAssertions()
-            let backend = SystemSleepBackend(runner: runner, journal: journal, assertions: assertions)
-            await #expect(throws: ServiceFailure.self) { try await backend.recover() }
-            #expect(try FileManager.default.contentsOfDirectory(atPath: url.path).contains("cooling-recovery.json"))
-            #expect(await runner.commands.isEmpty)
-        }
     }
 
     @Test func roundTripAndPermissions() throws {

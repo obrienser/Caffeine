@@ -77,23 +77,7 @@ final class HelperClient: HelperRequesting {
     }
 
     func request(_ request: ServiceRequest) async throws -> ServiceReply {
-        try await Self.checkingCompatibility(request, exchange: performRequest)
-    }
-
-    /// Fan control, a removed feature, remains only in the checks before an older
-    /// helper is replaced. v4's ordinary status omitted its fan state, so one
-    /// read-only probe must confirm its restoration. The protocol has no fan actions.
-    static func checkingCompatibility(_ request: ServiceRequest,
-                                      exchange: (Data) async throws -> ServiceReply) async throws -> ServiceReply {
-        do { return try await exchange(JSONEncoder().encode(request)) }
-        catch Failure.incompatibleVersion(serviceVersion: 4, canUpdate: _) where request.action == .status {
-            struct LegacyStatusProbe: Encodable {
-                let version = 4
-                let action = "coolingStatus"
-                let revision: UInt64 = 0
-            }
-            return try await exchange(JSONEncoder().encode(LegacyStatusProbe()))
-        }
+        try await performRequest(JSONEncoder().encode(request))
     }
 
     private func performRequest(_ payload: Data) async throws -> ServiceReply {
@@ -155,28 +139,21 @@ final class HelperClient: HelperRequesting {
             throw Failure.invalidReply
         }
         guard envelope.version == CaffeineServiceIdentity.protocolVersion else {
-            // v4-v6 also require explicitly settled cooling. A power-only reply
-            // cannot authorize replacing a helper that might control the fans.
-            struct LegacyReply: Decodable {
+            // Only an older helper that reports no session and no pending cleanup may
+            // be replaced. A snapshot this app can't read never allows it.
+            struct OlderReply: Decodable {
                 struct Snapshot: Decodable {
                     let phase: ServicePhase
                     let readyForSession: Bool
                     let requested: Bool
                 }
                 let snapshot: Snapshot
-                struct Cooling: Decodable {
-                    let phase: String
-                    let mode: String
-                }
-                let cooling: Cooling?
             }
-            let legacy = [2, 3, 4, 5, 6, 7].contains(envelope.version) ? try? JSONDecoder().decode(LegacyReply.self, from: data) : nil
-            let snapshot = legacy?.snapshot
+            let snapshot = envelope.version < CaffeineServiceIdentity.protocolVersion
+                ? (try? JSONDecoder().decode(OlderReply.self, from: data))?.snapshot : nil
             let settledPhases: Set<ServicePhase> = [.off, .externalOverride, .unavailable]
             let canUpdate = snapshot.map {
                 $0.readyForSession && !$0.requested && settledPhases.contains($0.phase)
-                    && (![4, 5, 6].contains(envelope.version)
-                        || (legacy?.cooling?.phase == "system" && legacy?.cooling?.mode == "system"))
             } ?? false
             throw Failure.incompatibleVersion(serviceVersion: envelope.version, canUpdate: canUpdate)
         }

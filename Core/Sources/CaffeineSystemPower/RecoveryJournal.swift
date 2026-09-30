@@ -1,6 +1,5 @@
 import Foundation
 import Darwin
-import CaffeineServiceProtocol
 
 struct RecoveryRecord: Codable, Equatable, Sendable {
     enum Phase: String, Codable { case prepared, active, releasing }
@@ -16,7 +15,6 @@ protocol RecoveryJournal: Sendable {
     func load() throws -> RecoveryRecord?
     func save(_ record: RecoveryRecord) throws
     func remove() throws
-    func verifyLegacyCleanup() throws
 }
 
 /// Descriptor-relative operations avoid following a replaced journal symlink.
@@ -43,21 +41,6 @@ struct FileRecoveryJournal: RecoveryJournal {
     }
     func save(_ record: RecoveryRecord) throws { _ = try load(); try file.save(record) }
     func remove() throws { _ = try load(); try file.remove() }
-
-    /// An older helper can leave a fan recovery record if it crashes while the app
-    /// bundle is being replaced. Any such file is unresolved, whatever its content
-    /// or boot: this version can't access the fans to confirm their restoration.
-    func verifyLegacyCleanup() throws {
-        let legacy = SecureRecoveryFile<RecoveryRecord>(directory: directory, owner: owner,
-                                                        filename: "cooling-recovery.json")
-        do {
-            if try !legacy.exists() { return }
-        } catch {
-            // Inaccessible or substituted state must never count as absence.
-        }
-        throw ServiceFailure(.cleanupRequired,
-            "Caffeine couldn’t confirm fan recovery from the previous version. Use that version to restore System cooling, then try again. The recovery record has been preserved.")
-    }
 }
 
 /// Hardened storage for the sleep recovery transaction.
@@ -68,16 +51,6 @@ struct SecureRecoveryFile<Record: Codable & Sendable>: Sendable {
 
     init(directory: URL, owner: uid_t, filename: String) {
         self.directory = directory; self.owner = owner; self.filename = filename
-    }
-
-    /// Inspect the directory entry without opening or following its target.
-    /// A dangling symlink, directory, empty or malformed record still exists.
-    func exists() throws -> Bool {
-        let dir = try openDirectory(); defer { close(dir) }
-        var info = stat()
-        if fstatat(dir, filename, &info, AT_SYMLINK_NOFOLLOW) == 0 { return true }
-        if errno == ENOENT { return false }
-        throw failure()
     }
 
     func load() throws -> Record? {

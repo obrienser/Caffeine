@@ -24,7 +24,6 @@ The service does only this:
 - In Closed Lid Mode, it runs `/usr/bin/pmset -g`, `pmset -a disablesleep 1` and `pmset -a disablesleep 0`: a fixed path and fixed arguments, no shell, a minimal environment, a 5-second timeout and a 64 KiB output limit.
 - It listens for sleep, wake and power source notifications, and releases its hold before it acknowledges that the Mac is going to sleep.
 - It keeps one recovery record, `/Library/Application Support/com.serhiital.Caffeine/sleep-recovery.json`. The record must be a non-empty regular file with a single link, owned by root, with mode `0600`, at most 8 KiB and without extended ACLs. Its folder must belong to root with mode `0700`, and every folder above it must belong to root and not be writable by group or others. The service opens every path component without following symbolic links.
-- While a recovery record of an older version (`cooling-recovery.json`) is present in the same folder, it starts no session.
 - It writes its log to `/Library/Logs/Caffeine/CaffeineHelper.log` and to the unified log.
 
 It has no network code and accepts no paths, commands or other free-form input from clients.
